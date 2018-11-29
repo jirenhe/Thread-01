@@ -6,7 +6,7 @@ public class T6 {
 
         CDPlayer cdPlayer = new CDPlayer();
 
-        new Thread(cdPlayer).start();
+        cdPlayer.start();
         TimeUnit.MICROSECONDS.sleep(10);
         cdPlayer.suspend();
         TimeUnit.MICROSECONDS.sleep(10);
@@ -20,6 +20,13 @@ public class T6 {
         private volatile int flag = 1;
 
         private static final Object lock = new Object();
+
+        private Thread thread;
+
+        public CDPlayer() {
+            thread = new Thread(this);
+        }
+
 
         @Override
         public void run() {
@@ -35,6 +42,10 @@ public class T6 {
                     singing();
                 }
             }
+        }
+
+        public void start(){
+            thread.start();
         }
 
         public void stop() {

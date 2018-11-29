@@ -6,7 +6,7 @@ public class T8 {
 
         CDPlayer cdPlayer = new CDPlayer();
 
-        new Thread(cdPlayer).start();
+        cdPlayer.start();
         TimeUnit.MICROSECONDS.sleep(10);
         cdPlayer.suspend();
         TimeUnit.MICROSECONDS.sleep(10);
@@ -24,9 +24,12 @@ public class T8 {
 
         Thread thread;
 
+        public CDPlayer() {
+            thread = new Thread(this);
+        }
+
         @Override
         public void run() {
-            thread = Thread.currentThread();
             while (!thread.isInterrupted()) {
                 synchronized (lock) {
                     while (flag == 2) {
@@ -39,6 +42,10 @@ public class T8 {
                     singing();
                 }
             }
+        }
+
+        public void start(){
+            thread.start();
         }
 
         public void stop() {

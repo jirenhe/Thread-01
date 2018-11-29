@@ -16,7 +16,7 @@ public class T3 {
             return 1;
         };
         FutureTask<Integer> futureTask = new FutureTask<>(callable);
-        new Thread(futureTask).run();
+        new Thread(futureTask).start();
         System.out.println("futureTask return:" + futureTask.get());
 
     }

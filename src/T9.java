@@ -1,4 +1,5 @@
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class T9 {
 
@@ -14,7 +15,9 @@ public class T9 {
         new Thread(futureTask).start();
 
 //        System.out.println(futureTask.get());
-        System.out.println(futureTask.get(2, TimeUnit.SECONDS));
+//        System.out.println(futureTask.get(2, TimeUnit.SECONDS));
+//        futureTask.cancel(true);
+//        System.out.println(futureTask.get());
     }
 
     public static class MyFutureTask<V> implements RunnableFuture<V> {
@@ -22,15 +25,13 @@ public class T9 {
 
         private Callable<V> callable;
 
-        private volatile boolean isFinish = false;
-
-        private volatile boolean isCancel = false;
+        private volatile String state = "NEW";
 
         private volatile Exception exception;
 
         private volatile V result;
 
-        private Thread runner;
+        private AtomicReference<Thread> runner = new AtomicReference<>();
 
         public MyFutureTask(Callable<V> callable) {
             this.callable = callable;
@@ -38,43 +39,48 @@ public class T9 {
 
         @Override
         public void run() {
-            runner = Thread.currentThread();
+            if (!"NEW".equals(state) || !runner.compareAndSet(null, Thread.currentThread())) {
+                return;
+            }
             try {
                 result = callable.call();
+                state = "FINISH";
             } catch (Exception e) {
+                state = "FAIL";
                 exception = e;
             } finally {
-                finish();
+                wakeupWaiters();
             }
         }
 
         @Override
         public boolean cancel(boolean mayInterruptIfRunning) {
             try {
-                if (mayInterruptIfRunning) {
-                    runner.interrupt();
+                Thread t;
+                if (mayInterruptIfRunning && (t = runner.get()) != null) {
+                    t.interrupt();
                 }
             } finally {
-                isCancel = true;
-                finish();
+                state = "CANCEL";
+                wakeupWaiters();
             }
             return true;
         }
 
         @Override
         public boolean isCancelled() {
-            return isCancel;
+            return "CANCEL".equals(state);
         }
 
         @Override
         public boolean isDone() {
-            return isFinish;
+            return "FINISH".equals(state);
         }
 
         @Override
         public V get() throws InterruptedException, ExecutionException {
             synchronized (this) {
-                while (!isFinish) {
+                while ("NEW".equals(state)) {
                     this.wait();
                 }
                 if (exception == null) {
@@ -91,12 +97,12 @@ public class T9 {
             long future = System.nanoTime() + nanos;
             long remaining = nanos;
             synchronized (this) {
-                while (!isFinish && remaining > 0) {
+                while ("NEW".equals(state) && remaining > 0) {
                     TimeUnit.NANOSECONDS.timedWait(this, timeout);
                     remaining = future - System.nanoTime();
                 }
-                if (isFinish) {
-                    if (exception == null) {
+                if (!"NEW".equals(state)) {
+                    if ("FAIL".equals(state)) {
                         return result;
                     } else {
                         throw new ExecutionException(exception);
@@ -107,8 +113,7 @@ public class T9 {
             }
         }
 
-        private void finish() {
-            isFinish = true;
+        private void wakeupWaiters() {
             synchronized (this) {
                 this.notifyAll();
             }
