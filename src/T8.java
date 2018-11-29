@@ -12,6 +12,7 @@ public class T8 {
         TimeUnit.MICROSECONDS.sleep(10);
         cdPlayer.resume();
         TimeUnit.MICROSECONDS.sleep(10);
+        cdPlayer.suspend();
         cdPlayer.stop();
     }
 
@@ -32,7 +33,7 @@ public class T8 {
                         try {
                             lock.wait();
                         } catch (InterruptedException e) {
-                            break;
+                            return;
                         }
                     }
                     singing();
