@@ -40,6 +40,7 @@ public class T7 {
                 TimeUnit.SECONDS.sleep(10000000);
             } catch (InterruptedException e) {
                 System.out.println("MyThread2 InterruptedException happend!");
+                System.out.println("MyThread2 is isInterrupted : " + this.isInterrupted());
             }
 
         }
@@ -54,6 +55,7 @@ public class T7 {
                     this.wait();
                 } catch (InterruptedException e) {
                     System.out.println("MyThread3 InterruptedException happend!");
+                    System.out.println("MyThread4 is isInterrupted : " + this.isInterrupted());
                 }
             }
 
@@ -69,6 +71,7 @@ public class T7 {
                     this.wait(5000);
                 } catch (InterruptedException e) {
                     System.out.println("MyThread4 InterruptedException happend!");
+                    System.out.println("MyThread4 is isInterrupted : " + this.isInterrupted());
                 }
             }
 
